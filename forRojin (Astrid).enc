@@ -1,0 +1,39 @@
+setwd("/~")
+Metadaten <-read.table("Metadaten.csv",header = TRUE, sep = ",")
+head(Metadaten)
+short_data <- Metadaten[, c("GZÜV.ID","Parameter.Name","Q4.2019..B940.")]
+new_data <- short_data
+new_data$index <- 1:length(new_data[,1])
+new_data$logLD <- new_data$index%in%grep("[^0-9.]+",short_data[,3])
+#replace signs and commas of values below limit of detection
+new_data[,3] <- gsub(short_data[,3], patt=",", replace=".")
+new_data[,3] <- gsub(new_data[,3],patt="[^0-9.]+",replace="")
+#convert to numeric                        
+new_data[,3]<-as.numeric(new_data[,3])
+
+newVec <- 0
+for (i in 1:length(new_data$Q4.2019..B940.[new_data$logLD]))
+{
+  newVec[i] <- runif(1,min=0,max=new_data$Q4.2019..B940.[new_data$logLD][i])
+}
+library(dplyr)
+library(tidyr)
+library(NADA)
+new_data<-new_data[, c("GZÜV.ID","Parameter.Name","Q4.2019..B940.")]
+filtered_data <- spread(new_data,Parameter.Name,Q4.2019..B940., fill = NA, convert = FALSE, drop = TRUE,
+                        sep = NULL) 
+summary(filtered_data)
+fit <- lm(`DOC mg/l`~`CALCIUM mg/l`+`ORTHOPHOSPHAT mg/l`+`SULFAT mg/l`+
+             +`ELEKTR. LEITF. (bei 25°C) µS/cm`+`NITRAT mg/l`+`EISEN mg/l`+
+             +`MAGNESIUM mg/l`+`NATRIUM mg/l`+ `WASSERTEMPERATUR °C`+ 
+             +`PH-WERT`+`SAUERSTOFFGEHALT mg/l`, data=filtered_data)
+plot(fit) #diagnostics don't look good. either change to glm or try to achieve 
+          #normality by using log
+
+fit <- glm(`DOC mg/l`~`CALCIUM mg/l`+`ORTHOPHOSPHAT mg/l`+`SULFAT mg/l`+
+            +`ELEKTR. LEITF. (bei 25°C) µS/cm`+`NITRAT mg/l`+`EISEN mg/l`+
+            +`MAGNESIUM mg/l`+`NATRIUM mg/l`+ `WASSERTEMPERATUR °C`+ 
+          +`PH-WERT`+`SAUERSTOFFGEHALT mg/l`, data=filtered_data, family = "poisson")
+summary(fit)
+filtered_data2 <- filtered_data[complete.cases(filtered_data[ , c(3:8,12:21)]),]
+plot(fit$fitted~filtered_data2$`DOC mg/l`)
