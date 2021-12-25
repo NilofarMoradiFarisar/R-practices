@@ -3,13 +3,13 @@
   #########-------- Damage ---------#########
 
 
-D=seq(500,900,length=18)
-W=seq(0.4,0.736,length=18)
+D=seq(0.1,0.3,length=27)
+W=seq(0.384,0.678,length=27)
 #yp=predict(s)
 
 
 yp=function(x1,x2)
-      {o=-0.1482 +((x1)^(-0.4037 ))*((x2)^(-3.4634))
+      {o=0.46047 +((x1)^(5.78283))*((x2)^(-6.51550))
               return(o)
          }
 
@@ -38,15 +38,15 @@ facetcol <- cut(zfacet, nbcol)
 
 
 
- persp(D,W,fval, col=color[facetcol],scale = TRUE,zlab="",
- xlab=" "
-,ylab="", theta=140 ,phi=30,
- box=TRUE,ticktype = "detailed")
+
+persp(D,W,fval, col=color[facetcol],scale = TRUE,
+#zlab="  "
+zlab=""
+, xlab="",
+ylab="",nticks = 5, theta=300,phi=30 
+,box=TRUE,ticktype = "detailed")
+
 
 image(D,W,fval,col=terrain.colors(100))
 contour(D,W,fval,col = "black",add = TRUE)
-
-
-
-
 
