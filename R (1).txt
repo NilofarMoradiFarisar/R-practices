@@ -1,0 +1,48 @@
+setwd("C:\Users\Rojin\Documents")
+Metadaten <-read.table("Metadaten.csv",header = TRUE, sep = ",")
+head(Metadaten)
+Metadaten[, c("Parameter.Name","Q2.2019..B920.","Q3.2019..B930.","Q4.2019..B940.")]
+library(dplyr)
+library(NADA)
+#filter for DOC concentration
+filtered_data <-filter(Metadaten,Parameter.Name == "DOC mg/l")
+filtered_data[, c(5,6,7,8), drop=FALSE]
+#convert to number with a new data frame
+new_data <- filtered_data
+#find the values below limit of detection
+new_data$index <- 1:length(new_data[,1])
+new_data$logLD <- new_data$index%in%grep("[^0-9.]+",filtered_data[,8])
+#replace signs and commas of values below limit of detection
+new_data[,6:8] <- apply(filtered_data[,6:8], 2, gsub, patt=",", replace=".")
+new_data[,6:8] <- apply(new_data[,6:8], 2, gsub,patt="[^0-9.]+",replace="")
+#convert to numeric                        
+new_data[,6:8]<-apply(new_data[,6:8],2,as.numeric)
+
+#get censored dataset
+Cen_data <- ros(new_data$Q4.2019..B940.,new_data$logLD) #this is from package NADA
+cenboxplot(new_data$Q4.2019..B940.,new_data$logLD)
+censummary(new_data$Q4.2019..B940.,new_data$logLD)
+sd(Cen_data); mean(Cen_data); quantile(Cen_data); median(Cen_data)
+#treat limit of detection values by dividing them by LD/2 (only recommended 
+#when less than 15% of the data is like that - in our case it is roughly 20%)
+new_data$Q4.2019..B940.[new_data$logLD] <- new_data$Q4.2019..B940.[new_data$logLD]/2
+
+hist(new_data$Q4.2019..B940.)
+sd(new_data$Q4.2019..B940., na.rm=TRUE)
+mean(new_data$Q4.2019..B940., na.rm=TRUE)
+median(new_data$Q4.2019..B940., na.rm=TRUE)
+quantile(new_data$Q4.2019..B940., na.rm=TRUE)
+
+#method used by MCDonough et al., selects random number between 
+#detection limit and 0, similar results as with LD/2
+newVec <- 0
+for (i in 1:length(new_data$Q4.2019..B940.[new_data$logLD]))
+{
+  newVec[i] <- runif(1,min=0,max=new_data$Q4.2019..B940.[new_data$logLD][i])
+}
+new_data$Q4.2019..B940.[new_data$logLD] <- newVec
+hist(new_data$Q4.2019..B940.)
+sd(new_data$Q4.2019..B940., na.rm=TRUE)
+mean(new_data$Q4.2019..B940., na.rm=TRUE)
+median(new_data$Q4.2019..B940., na.rm=TRUE)
+quantile(new_data$Q4.2019..B940., na.rm=TRUE)
